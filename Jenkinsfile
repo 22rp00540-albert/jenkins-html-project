@@ -1,39 +1,48 @@
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>My First CI/CD Project</title>
+pipeline {
+    agent any
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f4f8;
-            text-align: center;
-            padding: 50px;
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Downloading HTML source code'
+                checkout scm
+            }
         }
 
-        h1 {
-            color: #2563eb;
+        stage('Build') {
+            steps {
+                echo 'Checking HTML project files'
+                bat 'dir'
+            }
         }
 
-        p {
-            font-size: 20px;
+        stage('Docker Build') {
+            steps {
+                echo 'Building Docker image'
+                bat 'docker build -t my-html-website:latest .'
+            }
         }
 
-        button {
-            background-color: #2563eb;
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 5px;
-        }
-    </style>
-</head>
+        stage('Deploy') {
+            steps {
+                echo 'Deploying HTML website'
 
-<body>
-    <h1>Welcome to My Website</h1>
-    <p>This is my first CI/CD project using Jenkins.</p>
-    <p>Developed using HTML and CSS.</p>
-    <button>Learn More</button>
-</body>
-</html>
+                bat '''
+                docker rm -f my-html-container 2>NUL
+                docker run -d --name my-html-container -p 8081:80 my-html-website:latest
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Website deployed successfully!'
+        }
+
+        failure {
+            echo 'Deployment failed. Check the console output.'
+        }
+    }
+}
